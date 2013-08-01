@@ -1,11 +1,14 @@
 import win32serviceutil
 import win32service
 import logging
-from time import sleep
+from time import sleep, strptime, mktime
 from os.path import dirname
 import ConfigParser
 import requests
 import xml.etree.ElementTree as ET
+from calendar import timegm
+from datetime import datetime
+import pytz
 
 class PlaylistClientService (win32serviceutil.ServiceFramework):
 	_svc_name_ = "playlist-client"
@@ -53,8 +56,7 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 				self.update_playlist()
 
 	def update_playlist(self):
-		# payload = { 'started_time' : self.started_time }
-		payload = { }
+		payload = { 'started_time' : self.convert_playlist_time(self.started_time) }
 
 		if self.type == '1':
 			if self.title[0:2] != '_n_':
@@ -79,6 +81,16 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 			logging.debug(str(payload))
 		except Exception as e:
 			logging.error(e.args[0])
+
+	def convert_playlist_time(str_time):
+		time = strptime(str_time, '%d/%m/%Y %H:%M:%S')
+		brt = pytz.timezone('America/Sao_Paulo')
+		dt = datetime.fromtimestamp(mktime(time))
+		brt_dt = brt.localize(dt)
+		utc_dt = brt_dt - brt_dt.utcoffset()
+		utc_dt = utc_dt.replace(tzinfo=pytz.utc)
+		timestamp = timegm(utc_dt.utctimetuple())
+		return timestamp
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(PlaylistClientService)
