@@ -46,7 +46,8 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 			curins = onair.find('CurIns')
 			id3 = curins.find('ID3')
 		except Exception as e:
-			logging.error(e.args[0])
+			logging.exception(e)
+			logging.error(str(id3))
 		if id3 is not None:
 			if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
 				self.artist = id3.get('Artist')
