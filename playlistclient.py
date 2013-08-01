@@ -44,38 +44,37 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 			id3 = curins.find('ID3')
 		except Exception as e:
 			logging.error(e.args[0])
-		if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
-			self.artist = id3.get('Artist')
-			self.title = id3.get('Title')
-			self.started_time = curins.find('StartedTime').text
-			self.type = curins.find('Type').text
-			if self.type == '1':
-				if self.title[0:2] != '_n_':
-					self.update_playlist()
+		if id3 is not None:
+			if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
+				self.artist = id3.get('Artist')
+				self.title = id3.get('Title')
+				self.started_time = curins.find('StartedTime').text
+				self.type = curins.find('Type').text
+				self.update_playlist()
 
 	def update_playlist(self):
-		payload = { 'started_time' : self.started_time }
+		# payload = { 'started_time' : self.started_time }
+		payload = { }
 
 		if self.type == '1':
-			payload['title'] = self.title
-			if self.artist != '':
-				payload['artist'] = self.artist
+			if self.title[0:2] != '_n_':
+				payload['title'] = self.title
+				if self.artist != '':
+					payload['artist'] = self.artist
+			else:
+				payload['title'] = 'Bloco Comercial'
 		elif self.type == '0':
 			payload['title'] = 'Bloco Comercial'
-			payload['artist'] = 'Rádio Imperial'
 		elif self.type == '2':
 			payload['title'] = 'Ao Vivo!'
-			payload['artist'] = 'Rádio Imperial'
 		elif self.type == '3':
 			payload['title'] = 'Ao Vivo!'
-			payload['artist'] = 'Rádio Imperial'
 		elif self.type == '4':
 			payload['title'] = 'Hora Certa!'
-			payload['artist'] = 'Rádio Imperial'
 		else:
-			payload['title'] = 'Sem Informação'
+			payload['title'] = 'Sem Informacao'
 		try:
-			res = requests.get(r'playlist-service.appspot.com/v1/playlist/add', data=payload)
+			res = requests.post('http://playlist-service.appspot.com/v1/playlist/add', data=payload)
 			logging.debug('Updating Playlist:')
 			logging.debug(str(payload))
 		except Exception as e:
