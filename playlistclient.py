@@ -53,27 +53,18 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 			logging.exception(e)
 			pass
 		if id3 is not None:
-<<<<<<< HEAD
-			if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
-				self.artist = id3.get('Artist')
-				unicode(self.artist, "utf-8")
-				self.title = id3.get('Title')
-				unicode(self.title, "utf-8")
-				self.started_time = curins.find('StartedTime').text
-				self.type = curins.find('Type').text
-				self.update_playlist()
-=======
 			try:
 				if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
 					self.artist = id3.get('Artist')
+					unicode(self.artist, "utf-8")
 					self.title = id3.get('Title')
+					unicode(self.title, "utf-8")
 					self.started_time = curins.find('StartedTime').text
 					self.type = curins.find('Type').text
 					self.update_playlist()
 			except Exception as e:
 				logging.exception(e)
 				pass
->>>>>>> e43a0757c3a2e0046905fd0253b235f3340229d8
 
 	def update_playlist(self):
 		payload = { 'started_time' : self.convert_playlist_time(self.started_time) }
