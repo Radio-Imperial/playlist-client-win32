@@ -51,7 +51,9 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 		if id3 is not None:
 			if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
 				self.artist = id3.get('Artist')
+				unicode(self.artist, "utf-8")
 				self.title = id3.get('Title')
+				unicode(self.title, "utf-8")
 				self.started_time = curins.find('StartedTime').text
 				self.type = curins.find('Type').text
 				self.update_playlist()
@@ -65,17 +67,17 @@ class PlaylistClientService (win32serviceutil.ServiceFramework):
 				if self.artist != '':
 					payload['artist'] = self.artist
 			else:
-				payload['title'] = 'Bloco Comercial'
+				payload['title'] = u'Bloco Comercial'
 		elif self.type == '0':
-			payload['title'] = 'Bloco Comercial'
+			payload['title'] = u'Bloco Comercial'
 		elif self.type == '2':
-			payload['title'] = 'Ao Vivo!'
+			payload['title'] = u'Ao Vivo!'
 		elif self.type == '3':
-			payload['title'] = 'Ao Vivo!'
+			payload['title'] = u'Ao Vivo!'
 		elif self.type == '4':
-			payload['title'] = 'Hora Certa!'
+			payload['title'] = u'Hora Certa!'
 		else:
-			payload['title'] = 'Sem Informacao'
+			payload['title'] = u'Sem Informação'
 		try:
 			res = requests.post('http://playlist-service.appspot.com/v1/playlist/add', data=payload)
 			logging.debug('Updating Playlist:')
