@@ -10,104 +10,131 @@ from calendar import timegm
 from datetime import datetime
 import pytz
 
-class PlaylistClientService (win32serviceutil.ServiceFramework):
-	_svc_name_ = "playlist-client"
-	_svc_display_name_ = "playlist-client"
-	
-	def __init__(self, args):
-		win32serviceutil.ServiceFramework.__init__(self,args)
-		self.isAlive = True
-		self.artist = None
-		self.title = None
-		self.started_time = None
-		self.type = None
-		self.path = dirname(__file__)
-		config = ConfigParser.RawConfigParser()
-		config.read(self.path + '\playlistclient.cfg')
-		self.interval = float(config.get('Default', 'interval'))
-		self.playlist_file = config.get('Default', 'playlist_file')
-		# self.loglevel = config.get('Default', 'loglevel')
-		logging.basicConfig(filename=self.path + '\playlistclient.log', level=logging.DEBUG)
 
-	def SvcDoRun(self):
-		while self.isAlive:
-			self.parse_playlist_xml()
-			sleep(self.interval)
-	
-	def SvcStop(self):
-		self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
-		self.isAlive = False
+class Item:
+    def __init__(self, artist, title, started_time, type):
+        self.artist = artist
+        self.title = title
+        self.started_time = started_time
+        self.type = type
+        if self.type == '1':
+            if self.title[0:3] == '_n_':
+                self.artist = u''
+                self.title = u'Bloco Comercial'
+        elif self.type == '0':
+            self.artist = u''
+            self.title = u'Bloco Comercial'
+        elif self.type == '2':
+            self.artist = u''
+            self.title = u'Ao Vivo!'
+        elif self.type == '3':
+            self.artist = u''
+            self.title = u'Ao Vivo!'
+        elif self.type == '4':
+            self.artist = u''
+            self.title = u'Hora Certa!'
+        else:
+            self.artist = u''
+            self.title = u'Sem Informação'
 
-	def parse_playlist_xml(self):
-		id3 = None
-		try:
-			tree = ET.parse(self.playlist_file)
-			root = tree.getroot()
-			onair = root.find('OnAir')
-			curins = onair.find('CurIns')
-			id3 = curins.find('ID3')
-		except IOError:
-			logging.error('Cannot read playlist file.')
-			pass
-		except Exception as e:
-			logging.exception(e)
-			pass
-		if id3 is not None:
-			try:
-				if ((id3.get('Artist') != self.artist) or (id3.get('Title') != self.title) or (curins.find('Type').text != self.type)):
-					self.artist = id3.get('Artist')
-					unicode(self.artist, "utf-8")
-					self.title = id3.get('Title')
-					unicode(self.title, "utf-8")
-					self.started_time = curins.find('StartedTime').text
-					self.type = curins.find('Type').text
-					self.update_playlist()
-			except Exception as e:
-				logging.exception(e)
-				pass
+    def __cmp__(self, other):
+        if other is None:
+            return -1
 
-	def update_playlist(self):
-		payload = { 'started_time' : self.convert_playlist_time(self.started_time) }
+        if self.type != other.type:
+            return -1
 
-		if self.type == '1':
-			if self.title[0:2] != '_n_':
-				payload['title'] = self.title
-				if self.artist != '':
-					payload['artist'] = self.artist
-			else:
-				payload['title'] = u'Bloco Comercial'
-		elif self.type == '0':
-			payload['title'] = u'Bloco Comercial'
-		elif self.type == '2':
-			payload['title'] = u'Ao Vivo!'
-		elif self.type == '3':
-			payload['title'] = u'Ao Vivo!'
-		elif self.type == '4':
-			payload['title'] = u'Hora Certa!'
-		else:
-			payload['title'] = u'Sem Informação'
-		try:
-			res = requests.post('http://playlist-service.appspot.com/v1/playlist/add', data=payload)
-			logging.debug('Updating Playlist:')
-			logging.debug(str(payload))
-		except Exception as e:
-			logging.exception(e)
-			pass
+        if (self.artist != other.title) or (self.title != other.title):
+            return -1
 
-	def convert_playlist_time(self, str_time):
-		timestamp = None
-		try:
-			time = strptime(str_time, '%d/%m/%Y %H:%M:%S')
-			brt = pytz.timezone('America/Sao_Paulo')
-			dt = datetime.fromtimestamp(mktime(time))
-			brt_dt = brt.localize(dt)
-			utc_dt = brt_dt - brt_dt.utcoffset()
-			utc_dt = utc_dt.replace(tzinfo=pytz.utc)
-			timestamp = timegm(utc_dt.utctimetuple())
-		except Exception as e:
-			logging.exception(e)
-			pass
-		return timestamp
+        return 0
+
+
+class PlaylistClientService(win32serviceutil.ServiceFramework):
+    _svc_name_ = "playlist-client"
+    _svc_display_name_ = "playlist-client"
+
+    def __init__(self, args):
+        win32serviceutil.ServiceFramework.__init__(self, args)
+        self.is_alive = True
+        self.last_item = None
+        self.path = dirname(__file__)
+        config = ConfigParser.RawConfigParser()
+        config.read(self.path + '\playlistclient.cfg')
+        self.interval = float(config.get('Default', 'interval'))
+        self.playlist_file = config.get('Default', 'playlist_file')
+        logging.basicConfig(filename=self.path + '\playlistclient.log', level=logging.WARNING)
+
+    def SvcDoRun(self):
+        while self.is_alive:
+            self.parse_playlist_xml()
+            sleep(self.interval)
+
+    def SvcStop(self):
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        self.is_alive = False
+
+    def parse_playlist_xml(self):
+        id3 = None
+        try:
+            tree = ET.parse(self.playlist_file)
+            root = tree.getroot()
+            onair = root.find('OnAir')
+            curins = onair.find('CurIns')
+            id3 = curins.find('ID3')
+        except IOError:
+            logging.error('Cannot read playlist file.')
+            pass
+        except Exception as e:
+            logging.exception(e)
+            pass
+        if id3 is not None:
+            try:
+                artist = id3.get('Artist')
+                unicode(artist, "utf-8")
+                title = id3.get('Title')
+                unicode(title, "utf-8")
+                started_time = curins.find('StartedTime').text
+                type = curins.find('Type').text
+                item = Item(artist, title, started_time, type)
+                self.update_playlist(item)
+            except Exception as e:
+                logging.exception(e)
+                pass
+
+    def update_playlist(self, item):
+        if item != self.last_item:
+            self.last_item = item
+
+            payload = {
+                'started_time': self.convert_playlist_time(item.started_time),
+                'artist': item.artist,
+                'title': item.title
+            }
+
+            try:
+                requests.post('http://playlist-service.appspot.com/v1/playlist/add', data=payload)
+                logging.debug('Updating Playlist:')
+                logging.debug(str(payload))
+            except Exception as e:
+                logging.exception(e)
+                pass
+
+    def convert_playlist_time(self, str_time):
+        timestamp = None
+        try:
+            time = strptime(str_time, '%d/%m/%Y %H:%M:%S')
+            brt = pytz.timezone('America/Sao_Paulo')
+            dt = datetime.fromtimestamp(mktime(time))
+            brt_dt = brt.localize(dt)
+            utc_dt = brt_dt - brt_dt.utcoffset()
+            utc_dt = utc_dt.replace(tzinfo=pytz.utc)
+            timestamp = timegm(utc_dt.utctimetuple())
+        except Exception as e:
+            logging.exception(e)
+            pass
+        return timestamp
+
 
 if __name__ == '__main__':
     win32serviceutil.HandleCommandLine(PlaylistClientService)

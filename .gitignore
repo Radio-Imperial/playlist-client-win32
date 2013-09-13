@@ -33,6 +33,8 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+.idea
+*.iml
 
 *.log
 playlist.XML
