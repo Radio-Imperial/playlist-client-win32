@@ -19,23 +19,23 @@ class Item:
         self.type = type
         if self.type == '1':
             if self.title[0:3] == '_n_':
-                self.artist = u''
+                self.artist = None
                 self.title = u'Bloco Comercial'
         elif self.type == '0':
-            self.artist = u''
+            self.artist = None
             self.title = u'Bloco Comercial'
         elif self.type == '2':
-            self.artist = u''
+            self.artist = None
             self.title = u'Ao Vivo!'
         elif self.type == '3':
-            self.artist = u''
+            self.artist = None
             self.title = u'Ao Vivo!'
         elif self.type == '4':
-            self.artist = u''
+            self.artist = None
             self.title = u'Hora Certa!'
         else:
-            self.artist = u''
-            self.title = u'Sem Informação'
+            self.artist = None
+            self.title = u'Sem Informacao'
 
     def __cmp__(self, other):
         if other is None:
@@ -63,7 +63,7 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
         config.read(self.path + '\playlistclient.cfg')
         self.interval = float(config.get('Default', 'interval'))
         self.playlist_file = config.get('Default', 'playlist_file')
-        logging.basicConfig(filename=self.path + '\playlistclient.log', level=logging.WARNING)
+        logging.basicConfig(filename=self.path + '\playlistclient.log', level=logging.DEBUG)
 
     def SvcDoRun(self):
         while self.is_alive:
@@ -91,9 +91,7 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
         if id3 is not None:
             try:
                 artist = id3.get('Artist')
-                unicode(artist, "utf-8")
                 title = id3.get('Title')
-                unicode(title, "utf-8")
                 started_time = curins.find('StartedTime').text
                 type = curins.find('Type').text
                 item = Item(artist, title, started_time, type)
