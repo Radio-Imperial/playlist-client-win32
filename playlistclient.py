@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from calendar import timegm
 from datetime import datetime
 import pytz
+import re
 
 
 class Item:
@@ -72,7 +73,7 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
         self.is_alive = False
 
     def parse_playlist_xml(self):
-        id3 = None
+        filename = None
         try:
             tree = ET.parse(self.playlist_file)
             root = tree.getroot()
@@ -80,17 +81,27 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             curins = onair.find('CurIns')
             started_time = curins.find('StartedTime').text
             type = curins.find('Type').text
-            id3 = curins.find('ID3')
+            filename = curins.find('Filename').text
         except IOError:
             logging.error('Cannot read playlist file.')
             pass
         except Exception as e:
             logging.exception(e)
             pass
-        if id3 is not None:
+        if filename is not None:
             try:
-                artist = id3.get('Artist')
-                title = id3.get('Title')
+                match = re.match(r'(.*) - (.*).[mp3|wav|aac]', filename, re.I)
+                if match:
+                    artist = match.group(1)
+                    title = match.group(2)
+                else:
+                    match = re.match(r'(.*).[mp3|wav|aac]', filename, re.I)
+                    if match:
+                        artist = None
+                        title = match.group(1)
+                    else:
+                        artist = None
+                        title = None
                 item = Item(artist, title, started_time, type)
                 self.update_playlist(item)
             except Exception as e:
