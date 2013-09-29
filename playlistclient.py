@@ -123,12 +123,21 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
                 'title': item.title
             }
 
+            logging.debug('Updating Playlist')
+            logging.debug('Request Payload:')
+            logging.debug(str(payload))
+
             try:
-                requests.post('http://playlist-service.appspot.com/v1/playlist/add',
+                r = requests.post('http://playlist-service.appspot.com/v1/playlist/add',
                               auth=(credentials.USERNAME, credentials.PASSWORD),
                               data=payload)
-                logging.debug('Updating Playlist:')
-                logging.debug(str(payload))
+                r.raise_for_status()
+                logging.debug('Response Code:')
+                logging.debug(str(r.status_code))
+                logging.debug('Response Headers:')
+                logging.debug(str(r.headers))
+                logging.debug('Response Body:')
+                logging.debug(str(r.content))
             except Exception as e:
                 logging.exception(e)
                 pass
