@@ -39,3 +39,4 @@ nosetests.xml
 *.log
 playlist.XML
 playlistclient.cfg
+credentials.py

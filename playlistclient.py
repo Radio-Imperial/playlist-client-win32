@@ -10,6 +10,7 @@ from calendar import timegm
 from datetime import datetime
 import pytz
 import re
+import credentials
 
 
 class Item:
@@ -123,7 +124,9 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             }
 
             try:
-                requests.post('http://playlist-service.appspot.com/v1/playlist/add', data=payload)
+                requests.post('http://playlist-service.appspot.com/v1/playlist/add',
+                              auth=(credentials.USERNAME, credentials.PASSWORD),
+                              data=payload)
                 logging.debug('Updating Playlist:')
                 logging.debug(str(payload))
             except Exception as e:
