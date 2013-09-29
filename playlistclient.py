@@ -61,7 +61,10 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
         config.read(self.path + '\playlistclient.cfg')
         self.interval = float(config.get('Default', 'interval'))
         self.playlist_file = config.get('Default', 'playlist_file')
-        logging.basicConfig(filename=self.path + '\playlistclient.log', level=logging.DEBUG)
+        self.loglevel = config.get('Default', 'loglevel').upper()
+        if not isinstance(self.loglevel, int):
+            raise ValueError('Invalid log level: %s' % self.loglevel)
+        logging.basicConfig(filename=self.path + '\playlistclient.log', level=self.loglevel)
 
     def SvcDoRun(self):
         while self.is_alive:
@@ -90,12 +93,12 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             pass
         if filename is not None:
             try:
-                match = re.match(r'(.*) - (.*).[mp3|wav|aac]', filename, re.I)
+                match = re.match(r'(.*) - (.*).(mp3|wav|aac)', filename, re.I)
                 if match:
                     artist = match.group(1)
                     title = match.group(2)
                 else:
-                    match = re.match(r'(.*).[mp3|wav|aac]', filename, re.I)
+                    match = re.match(r'(.*).(mp3|wav|aac)', filename, re.I)
                     if match:
                         artist = None
                         title = match.group(1)
