@@ -90,8 +90,8 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             pass
         if id3 is not None:
             try:
-                artist = id3.get('Artist')
-                title = id3.get('Title')
+                artist = id3.get('Artist').decode('iso-8859-1').encode('utf8')
+                title = id3.get('Title').decode('iso-8859-1').encode('utf8')
                 started_time = curins.find('StartedTime').text
                 type = curins.find('Type').text
                 item = Item(artist, title, started_time, type)
