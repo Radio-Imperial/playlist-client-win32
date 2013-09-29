@@ -61,10 +61,11 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
         config.read(self.path + '\playlistclient.cfg')
         self.interval = float(config.get('Default', 'interval'))
         self.playlist_file = config.get('Default', 'playlist_file')
-        self.loglevel = config.get('Default', 'loglevel').upper()
-        if not isinstance(self.loglevel, int):
+        loglevel = config.get('Default', 'loglevel')
+        numeric_loglevel = getattr(logging, loglevel.upper(), None)
+        if not isinstance(numeric_loglevel, int):
             raise ValueError('Invalid log level: %s' % self.loglevel)
-        logging.basicConfig(filename=self.path + '\playlistclient.log', level=self.loglevel)
+        logging.basicConfig(filename=self.path + '\playlistclient.log', level=numeric_loglevel)
 
     def SvcDoRun(self):
         while self.is_alive:
