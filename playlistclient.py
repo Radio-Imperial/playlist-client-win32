@@ -35,18 +35,15 @@ class Item:
             self.title = u'Hora Certa!'
         else:
             self.artist = None
-            self.title = u'Sem Informacao'
+            self.title = u'Sem Informa\xe7\xe3o'
 
     def __cmp__(self, other):
         if other is None:
             return -1
-
         if self.type != other.type:
             return -1
-
-        if (self.artist != other.title) or (self.title != other.title):
+        if (self.artist != other.artist) or (self.title != other.title):
             return -1
-
         return 0
 
 
@@ -81,6 +78,8 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             root = tree.getroot()
             onair = root.find('OnAir')
             curins = onair.find('CurIns')
+            started_time = curins.find('StartedTime').text
+            type = curins.find('Type').text
             id3 = curins.find('ID3')
         except IOError:
             logging.error('Cannot read playlist file.')
@@ -90,10 +89,8 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
             pass
         if id3 is not None:
             try:
-                artist = id3.get('Artist').decode('iso-8859-1').encode('utf8')
-                title = id3.get('Title').decode('iso-8859-1').encode('utf8')
-                started_time = curins.find('StartedTime').text
-                type = curins.find('Type').text
+                artist = id3.get('Artist')
+                title = id3.get('Title')
                 item = Item(artist, title, started_time, type)
                 self.update_playlist(item)
             except Exception as e:
