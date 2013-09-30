@@ -115,7 +115,6 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
 
     def update_playlist(self, item):
         if item != self.last_item:
-            self.last_item = item
 
             payload = {
                 'started_time': self.convert_playlist_time(item.started_time),
@@ -132,6 +131,7 @@ class PlaylistClientService(win32serviceutil.ServiceFramework):
                               auth=(credentials.USERNAME, credentials.PASSWORD),
                               data=payload)
                 r.raise_for_status()
+                self.last_item = item
                 logging.debug('Response Code:')
                 logging.debug(str(r.status_code))
                 logging.debug('Response Headers:')
