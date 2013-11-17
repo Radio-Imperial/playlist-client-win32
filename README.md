@@ -1,6 +1,8 @@
 playlist-client-win32
 =====================
 
+Windows agent for the Playlist broadcasting software. Publishes playlist information to playlist-service.
+
 requires
 --------
 
